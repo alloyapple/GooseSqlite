@@ -123,6 +123,16 @@ public class Database {
         return rc == SQLITE_DONE || rc == SQLITE_OK
     }
 
+    public func beginTransaction() -> Bool {
+        let b = self.executeUpdate(sql: "begin exclusive transaction", args: [])
+        return b
+    }
+
+    public func commit() -> Bool {
+        let b = self.executeUpdate(sql: "commit transaction", args: [])
+        return b
+    }
+
     var lastErrorMessage: String {
         return String(cString: sqlite3_errmsg(db))
     }
