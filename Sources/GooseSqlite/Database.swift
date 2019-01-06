@@ -85,7 +85,7 @@ public class Database {
         return rs
     }
 
-    public func executeQuery(sql: String, args: [String: Any] = [:]) -> ResultSet {
+    public func executeQuery(sql: String, args: [String: Any?] = [:]) -> ResultSet {
         var stmt: OpaquePointer? = nil
         let rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nil)
 
