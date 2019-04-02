@@ -27,39 +27,40 @@ public class Database {
 
 
     public func bindObject(obj: Any?, idx: Int32, stmt: OpaquePointer?) {
-        guard let obj = obj else {
-            sqlite3_bind_null(stmt, idx)
-            return
-        }
 
-        if let data = obj as? Data {
-            sqlite3_bind_blob(stmt, idx, data.castToCPointer(), Int32(data.count), nil)
-        } else if let date = obj as? Date {
-            sqlite3_bind_double(stmt, idx, date.timeIntervalSince1970)
-        } else if let i = obj as? Int32 {
-            sqlite3_bind_int(stmt, idx, i)
-        } else if let i = obj as? Int16 {
-            sqlite3_bind_int(stmt, idx, Int32(i))
-        } else if let i = obj as? Int64 {
-            sqlite3_bind_int64(stmt, idx, i)
-        } else if let i = obj as? Int8 {
-            sqlite3_bind_int(stmt, idx, Int32(i))
-        } else if let i = obj as? UInt32 {
-            sqlite3_bind_int(stmt, idx, Int32(i))
-        } else if let i = obj as? UInt16 {
-            sqlite3_bind_int(stmt, idx, Int32(i))
-        } else if let i = obj as? UInt64 {
-            sqlite3_bind_int64(stmt, idx, Int64(i))
-        } else if let i = obj as? UInt8 {
-            sqlite3_bind_int(stmt, idx, Int32(i))
-        } else if let d = obj as? Double {
-            sqlite3_bind_double(stmt, idx, d)
-        } else if let d = obj as? Float {
-            sqlite3_bind_double(stmt, idx, Double(d))
-        } else if let b = obj as? Bool {
-            sqlite3_bind_int(stmt, idx, b ? 1 : 0)
-        } else if let t = obj as? String {
-            sqlite3_bind_text(stmt, idx, t, -1, nil)
+        switch obj {
+        case let value as Data:
+            sqlite3_bind_blob64(stmt, idx, value.castToCPointer(), UInt64(value.count), nil)
+        case let value as Date:
+            sqlite3_bind_double(stmt, idx, value.timeIntervalSince1970)
+        case let value as Int32:
+            sqlite3_bind_int(stmt, idx, value)
+        case let value as Int16:
+            sqlite3_bind_int(stmt, idx, Int32(value))
+        case let value as Int64:
+            sqlite3_bind_int64(stmt, idx, value)
+        case let value as Int8:
+            sqlite3_bind_int(stmt, idx, Int32(value))
+        case let value as UInt32:
+            sqlite3_bind_int(stmt, idx, Int32(value))
+        case let value as UInt16:
+            sqlite3_bind_int(stmt, idx, Int32(value))
+        case let value as UInt64:
+            sqlite3_bind_int64(stmt, idx, Int64(value))
+        case let value as UInt8:
+            sqlite3_bind_int(stmt, idx, Int32(value))
+        case let value as Double:
+            sqlite3_bind_double(stmt, idx, value)
+        case let value as Float:
+            sqlite3_bind_double(stmt, idx, Double(value))
+        case let value as Float32:
+            sqlite3_bind_double(stmt, idx, Double(value))
+        case let value as Bool:
+            sqlite3_bind_int(stmt, idx, value ? 1 : 0)
+        case let value as String:
+            sqlite3_bind_text(stmt, idx, value, -1, nil)
+        default:
+            sqlite3_bind_null(stmt, idx)
         }
     }
 
