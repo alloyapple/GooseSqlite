@@ -26,42 +26,46 @@ public class Database {
     }
 
 
-    public func bindObject(obj: Any?, idx: Int32, stmt: OpaquePointer?) {
+    public func bindObject(obj: Any?, idx: Int32, stmt: OpaquePointer?) -> Bool {
+
+        var ret = SQLITE_OK
 
         switch obj {
         case let value as Data:
-            sqlite3_bind_blob64(stmt, idx, value.castToCPointer(), UInt64(value.count), nil)
+            ret = sqlite3_bind_blob64(stmt, idx, value.castToCPointer(), UInt64(value.count), nil)
         case let value as Date:
-            sqlite3_bind_double(stmt, idx, value.timeIntervalSince1970)
+            ret = sqlite3_bind_double(stmt, idx, value.timeIntervalSince1970)
         case let value as Int32:
-            sqlite3_bind_int(stmt, idx, value)
+            ret = sqlite3_bind_int(stmt, idx, value)
         case let value as Int16:
-            sqlite3_bind_int(stmt, idx, Int32(value))
+            ret = sqlite3_bind_int(stmt, idx, Int32(value))
         case let value as Int64:
-            sqlite3_bind_int64(stmt, idx, value)
+            ret = sqlite3_bind_int64(stmt, idx, value)
         case let value as Int8:
-            sqlite3_bind_int(stmt, idx, Int32(value))
+            ret = sqlite3_bind_int(stmt, idx, Int32(value))
         case let value as UInt32:
-            sqlite3_bind_int(stmt, idx, Int32(value))
+            ret = sqlite3_bind_int(stmt, idx, Int32(value))
         case let value as UInt16:
-            sqlite3_bind_int(stmt, idx, Int32(value))
+            ret = sqlite3_bind_int(stmt, idx, Int32(value))
         case let value as UInt64:
-            sqlite3_bind_int64(stmt, idx, Int64(value))
+            ret = sqlite3_bind_int64(stmt, idx, Int64(value))
         case let value as UInt8:
-            sqlite3_bind_int(stmt, idx, Int32(value))
+            ret = sqlite3_bind_int(stmt, idx, Int32(value))
         case let value as Double:
-            sqlite3_bind_double(stmt, idx, value)
+            ret = sqlite3_bind_double(stmt, idx, value)
         case let value as Float:
-            sqlite3_bind_double(stmt, idx, Double(value))
+            ret = sqlite3_bind_double(stmt, idx, Double(value))
         case let value as Float32:
-            sqlite3_bind_double(stmt, idx, Double(value))
+            ret = sqlite3_bind_double(stmt, idx, Double(value))
         case let value as Bool:
-            sqlite3_bind_int(stmt, idx, value ? 1 : 0)
+            ret = sqlite3_bind_int(stmt, idx, value ? 1 : 0)
         case let value as String:
-            sqlite3_bind_text(stmt, idx, value, -1, nil)
+            ret = sqlite3_bind_text(stmt, idx, value, -1, nil)
         default:
-            sqlite3_bind_null(stmt, idx)
+            ret = sqlite3_bind_null(stmt, idx)
         }
+
+        return ret == SQLITE_OK
     }
 
     public func executeQuery(sql: String, args: [Any?] = []) -> ResultSet {
@@ -116,7 +120,9 @@ public class Database {
         let queryCount = sqlite3_bind_parameter_count(stmt)
         if args.count == queryCount {
             for (i, item) in args.enumerated() {
-                self.bindObject(obj: item, idx: Int32(i), stmt: stmt)
+                if self.bindObject(obj: item, idx: Int32(i + 1), stmt: stmt) == false {
+                    print("\(self.lastErrorMessage)")
+                }
             }
         }
 
