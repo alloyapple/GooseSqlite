@@ -10,8 +10,8 @@ public class Statement: Hashable {
         return lhs.statement == rhs.statement
     }
 
-    public var hashValue: Int {
-        return self.statement?.hashValue ?? 0
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.statement?.hashValue ?? 0)
     }
 
     var statement: OpaquePointer?
