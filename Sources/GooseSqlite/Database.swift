@@ -8,7 +8,7 @@ import CSqlite3
 extension Data {
     func castToCPointer<T>() -> T {
         return self.withUnsafeBytes {
-            $0.pointee
+            $0.load(as: T.self)
         }
     }
 }
@@ -16,6 +16,8 @@ extension Data {
 public class Database {
     let path: String
     var db: OpaquePointer? = nil
+    var cachedStatements: [String: Set<Statement>] = [:]
+
 
     public init(path: String) {
         self.path = path
@@ -113,10 +115,17 @@ public class Database {
     public func executeUpdate(sql: String, args: [Any?]) -> Bool {
         var stmt: OpaquePointer? = nil
 
-        defer {
-            sqlite3_finalize(stmt)
+        var rc = SQLITE_OK
+        if let st = self.cachedStatementForQuery(sql: sql) {
+            st.reset()
+            stmt = st.statement
+        } else {
+            rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nil)
+            if rc != SQLITE_OK {
+                sqlite3_finalize(stmt)
+            }
         }
-        var rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nil)
+
         let queryCount = sqlite3_bind_parameter_count(stmt)
         if args.count == queryCount {
             for (i, item) in args.enumerated() {
@@ -124,6 +133,14 @@ public class Database {
                     print("\(self.lastErrorMessage)")
                 }
             }
+        }
+
+        if let st = self.cachedStatementForQuery(sql: sql) {
+            //do nothing
+        } else {
+            var st = Statement()
+            st.statement = stmt
+            self.setCachedStatementForQuery(sql: sql, st: st)
         }
 
         rc = sqlite3_step(stmt)
@@ -140,9 +157,32 @@ public class Database {
         return b
     }
 
+    func cachedStatementForQuery(sql: String) -> Statement? {
+        if let v = cachedStatements[sql] {
+            let ret = v.first {
+                return $0.inUse == false
+            }
+
+            return ret
+        } else {
+            return nil
+        }
+    }
+
+    func setCachedStatementForQuery(sql: String, st: Statement) {
+        if let v = cachedStatements[sql] {
+            var array = Array(v)
+            array.append(st)
+            cachedStatements[sql] = Set(array)
+        } else {
+            cachedStatements[sql] = Set([st])
+        }
+    }
+
     var lastErrorMessage: String {
         return String(cString: sqlite3_errmsg(db))
     }
+
 
     deinit {
         sqlite3_close(db)

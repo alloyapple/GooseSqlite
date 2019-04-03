@@ -18,10 +18,9 @@ final class GooseSqliteTests: XCTestCase {
         let database = Database(path: "./test.db")
         database.open()
         database.executeUpdate(sql: "create table test(id integer primary key, name text)", args: [])
-        database.executeUpdate(sql: "insert into test(name) values (?)", args: ["foo"])
 
         database.beginTransaction()
-        for _ in 1...100000 {
+        for _ in 0...10000 {
             database.executeUpdate(sql: "insert into test(name) values (?)", args: ["foo"])
         }
         database.commit()
