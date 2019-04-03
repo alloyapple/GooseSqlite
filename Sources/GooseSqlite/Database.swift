@@ -115,10 +115,17 @@ public class Database {
     public func executeUpdate(sql: String, args: [Any?]) -> Bool {
         var stmt: OpaquePointer? = nil
 
-        defer {
-            sqlite3_finalize(stmt)
+        var rc = SQLITE_OK
+        if let st = self.cachedStatementForQuery(sql: sql) {
+            st.reset()
+            stmt = st.statement
+        } else {
+            rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nil)
+            if rc != SQLITE_OK {
+                sqlite3_finalize(stmt)
+            }
         }
-        var rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nil)
+
         let queryCount = sqlite3_bind_parameter_count(stmt)
         if args.count == queryCount {
             for (i, item) in args.enumerated() {
@@ -126,6 +133,14 @@ public class Database {
                     print("\(self.lastErrorMessage)")
                 }
             }
+        }
+
+        if let st = self.cachedStatementForQuery(sql: sql) {
+            //do nothing
+        } else {
+            var st = Statement()
+            st.statement = stmt
+            self.setCachedStatementForQuery(sql: sql, st: st)
         }
 
         rc = sqlite3_step(stmt)
