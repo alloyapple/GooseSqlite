@@ -20,7 +20,7 @@ final class GooseSqliteTests: XCTestCase {
         database.executeUpdate(sql: "create table test(id integer primary key, name text)", args: [])
 
         database.beginTransaction()
-        for _ in 0...10000000 {
+        for _ in 0...10000 {
             database.executeUpdate(sql: "insert into test(name) values (?)", args: ["foo"])
         }
         database.commit()

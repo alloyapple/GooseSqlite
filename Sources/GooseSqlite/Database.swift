@@ -8,7 +8,7 @@ import CSqlite3
 extension Data {
     func castToCPointer<T>() -> T {
         return self.withUnsafeBytes {
-            $0.pointee
+            $0.load(as: T.self)
         }
     }
 }
