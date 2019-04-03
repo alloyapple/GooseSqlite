@@ -16,6 +16,8 @@ extension Data {
 public class Database {
     let path: String
     var db: OpaquePointer? = nil
+    var cachedStatements: [String: Set<Statement>] = [:]
+
 
     public init(path: String) {
         self.path = path
@@ -140,9 +142,32 @@ public class Database {
         return b
     }
 
+    func cachedStatementForQuery(sql: String) -> Statement? {
+        if let v = cachedStatements[sql] {
+            let ret = v.first {
+                return $0.inUse == false
+            }
+
+            return ret
+        } else {
+            return nil
+        }
+    }
+
+    func setCachedStatementForQuery(sql: String, st: Statement) {
+        if let v = cachedStatements[sql] {
+            var array = Array(v)
+            array.append(st)
+            cachedStatements[sql] = Set(array)
+        } else {
+            cachedStatements[sql] = Set([st])
+        }
+    }
+
     var lastErrorMessage: String {
         return String(cString: sqlite3_errmsg(db))
     }
+
 
     deinit {
         sqlite3_close(db)
