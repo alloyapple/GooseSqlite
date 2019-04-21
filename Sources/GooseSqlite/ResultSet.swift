@@ -37,16 +37,18 @@ public class ResultSet {
         return ret
     }
 
-    public func result<T>() -> T? where T: Decodable {
+    public func result<T>() throws -> T  where T: Decodable   {
         let r = self.resultDictionary
 
-        guard let data = try? JSONSerialization.data(withJSONObject: r) else {
-            return nil
+        do {
+            let data = try JSONSerialization.data(withJSONObject: r)
+            let decoder = JSONDecoder()
+            let t = try decoder.decode(T.self, from: data)
+            return t
+        } catch {
+            throw SqliteError()
         }
 
-        let decoder = JSONDecoder()
-        let t = try? decoder.decode(T.self, from: data)
-        return t
     }
 
     func objectForColumnIndex(_ columnIdx: Int32) -> Any? {
